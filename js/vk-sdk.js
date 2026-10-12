@@ -99,6 +99,22 @@ class VKSDKWrapper {
                 this.platform = 'vk_play';
                 this.isInitialized = true;
                 this.isMock = false;
+                if (typeof window.iframeApi === 'function') {
+                    window.iframeApi({
+                        appid: urlParams.get('appid') || '',
+                        onReady: (api) => {
+                            this.vkPlayApi = api;
+                            if (api && api.user) {
+                                this.user = api.user;
+                            }
+                        }
+                    });
+                } else if (typeof window.iframeApi === 'object') {
+                    this.vkPlayApi = window.iframeApi;
+                    if (window.iframeApi.user) {
+                        this.user = window.iframeApi.user;
+                    }
+                }
                 console.log('[VK-SDK] Initialized successfully with VK Play (iframeApi)');
             } catch (err) {
                 console.warn('[VK-SDK] VK Play init failed, falling back to mock:', err);
@@ -197,6 +213,54 @@ class VKSDKWrapper {
             return;
         }
 
+        // VK Play integration
+        if (this.platform === 'vk_play') {
+            this.isShowingAd = true;
+            if (window.gameAudio) window.gameAudio.mute();
+            if (cb.onOpen) cb.onOpen();
+
+            const finishVkPlayAd = (shown) => {
+                this.lastFullscreenAdTime = Date.now();
+                this.isShowingAd = false;
+                if (window.gameAudio && !window.gameAudio.isUserMuted) {
+                    window.gameAudio.unmute();
+                }
+                safeClose(shown);
+            };
+
+            if (this.vkPlayApi && this.vkPlayApi.ads && typeof this.vkPlayApi.ads.showFullscreenAdv === 'function') {
+                try {
+                    this.vkPlayApi.ads.showFullscreenAdv({
+                        callbacks: {
+                            onClose: () => finishVkPlayAd(true),
+                            onError: (err) => {
+                                this.isShowingAd = false;
+                                if (window.gameAudio && !window.gameAudio.isUserMuted) window.gameAudio.unmute();
+                                if (cb.onError) cb.onError(err);
+                                safeClose(false);
+                            }
+                        }
+                    });
+                    return;
+                } catch (e) {
+                    finishVkPlayAd(true);
+                    return;
+                }
+            } else if (this.vkPlayApi && typeof this.vkPlayApi.showAds === 'function') {
+                try {
+                    this.vkPlayApi.showAds({ interstitial: true });
+                    finishVkPlayAd(true);
+                    return;
+                } catch (e) {
+                    finishVkPlayAd(true);
+                    return;
+                }
+            } else {
+                finishVkPlayAd(true);
+                return;
+            }
+        }
+
         // Mock mode or non-embedded
         if (this.isMock || !window.vkBridge || typeof window.vkBridge.send !== 'function') {
             this.lastFullscreenAdTime = now;
@@ -244,6 +308,55 @@ class VKSDKWrapper {
         if (this.isShowingAd) {
             safeClose(false);
             return;
+        }
+
+        // VK Play integration
+        if (this.platform === 'vk_play') {
+            this.isShowingAd = true;
+            if (window.gameAudio) window.gameAudio.mute();
+            if (cb.onOpen) cb.onOpen();
+
+            const finishVkPlayRewarded = (rewarded) => {
+                this.isShowingAd = false;
+                if (window.gameAudio && !window.gameAudio.isUserMuted) {
+                    window.gameAudio.unmute();
+                }
+                if (rewarded && cb.onRewarded) cb.onRewarded();
+                safeClose(rewarded);
+            };
+
+            if (this.vkPlayApi && this.vkPlayApi.ads && typeof this.vkPlayApi.ads.showRewardedVideo === 'function') {
+                try {
+                    this.vkPlayApi.ads.showRewardedVideo({
+                        callbacks: {
+                            onRewarded: () => finishVkPlayRewarded(true),
+                            onClose: () => finishVkPlayRewarded(false),
+                            onError: (err) => {
+                                this.isShowingAd = false;
+                                if (window.gameAudio && !window.gameAudio.isUserMuted) window.gameAudio.unmute();
+                                if (cb.onError) cb.onError(err);
+                                safeClose(false);
+                            }
+                        }
+                    });
+                    return;
+                } catch (e) {
+                    finishVkPlayRewarded(true);
+                    return;
+                }
+            } else if (this.vkPlayApi && typeof this.vkPlayApi.showAds === 'function') {
+                try {
+                    this.vkPlayApi.showAds({ rewarded: true });
+                    finishVkPlayRewarded(true);
+                    return;
+                } catch (e) {
+                    finishVkPlayRewarded(true);
+                    return;
+                }
+            } else {
+                finishVkPlayRewarded(true);
+                return;
+            }
         }
 
         // Mock mode simulation
@@ -307,14 +420,18 @@ class VKSDKWrapper {
         }
 
         let result = null;
-        if (cloudData && Object.keys(cloudData).length > 0) {
-            if (localData && ((localData.level || 0) > (cloudData.level || 0) || (localData.scoreTotal || 0) > (cloudData.scoreTotal || 0))) {
-                result = { ...cloudData, ...localData };
-            } else {
-                result = cloudData;
-            }
+        if (cloudData && localData) {
+            result = {
+                ...cloudData,
+                ...localData,
+                level: Math.max(localData.level || 1, cloudData.level || 1),
+                scoreTotal: Math.max(localData.scoreTotal || 0, cloudData.scoreTotal || 0),
+                gold: Math.max(localData.gold || 0, cloudData.gold || 0),
+                wood: Math.max(localData.wood || 0, cloudData.wood || 0),
+                resin: Math.max(localData.resin || 0, cloudData.resin || 0)
+            };
         } else {
-            result = localData || null;
+            result = cloudData || localData || null;
         }
 
         if (result) {

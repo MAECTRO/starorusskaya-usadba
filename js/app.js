@@ -284,11 +284,15 @@ class SlavicManorApp {
     }
 
     updateUIResources() {
-        document.getElementById('res-wood').textContent = this.gameState.wood;
-        document.getElementById('res-gold').textContent = this.gameState.gold;
-        document.getElementById('res-resin').textContent = this.gameState.resin;
-        document.getElementById('res-energy').textContent = `${this.gameState.energy}/${this.gameState.maxEnergy}`;
-        document.getElementById('current-level-num').textContent = this.gameState.level;
+        const setTxt = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val;
+        };
+        setTxt('res-wood', this.gameState.wood);
+        setTxt('res-gold', this.gameState.gold);
+        setTxt('res-resin', this.gameState.resin);
+        setTxt('res-energy', `${this.gameState.energy}/${this.gameState.maxEnergy}`);
+        setTxt('current-level-num', this.gameState.level);
     }
 
     setStoryDialogue(author, avatar, text) {
@@ -1308,7 +1312,17 @@ class SlavicManorApp {
 
 window.SlavicManorApp = SlavicManorApp;
 
-document.addEventListener('DOMContentLoaded', () => {
-    window.app = new SlavicManorApp();
-    window.app.init();
-});
+const startApp = () => {
+    if (!window.app && typeof document !== 'undefined' && document.getElementById('game-container')) {
+        window.app = new SlavicManorApp();
+        window.app.init();
+    }
+};
+
+if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startApp);
+    } else {
+        startApp();
+    }
+}

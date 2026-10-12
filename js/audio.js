@@ -60,7 +60,10 @@ class SlavicAudioEngine {
             } catch (e) {}
         }
         if (this.ctx && this.ctx.state === 'suspended') {
-            this.ctx.resume().catch(() => {});
+            try {
+                const res = this.ctx.resume();
+                if (res && typeof res.catch === 'function') res.catch(() => {});
+            } catch (e) {}
         }
     }
 
@@ -74,7 +77,10 @@ class SlavicAudioEngine {
                 }
             }
             if (this.ctx && this.ctx.state === 'suspended') {
-                this.ctx.resume().catch(() => {});
+                try {
+                    const res = this.ctx.resume();
+                    if (res && typeof res.catch === 'function') res.catch(() => {});
+                } catch (e) {}
             }
             if (this.ctx) {
                 const buffer = this.ctx.createBuffer(1, 1, 22050);
@@ -93,7 +99,7 @@ class SlavicAudioEngine {
     startMusic() {
         if (!this.unlocked) return;
         this.initContext();
-        if (this.musicPlaying || this.isMuted) return;
+        if (this.musicPlaying || this.isMuted || this.isUserMuted) return;
         this.musicPlaying = true;
         this.playMelodyLoop();
     }
@@ -109,7 +115,7 @@ class SlavicAudioEngine {
     nextTrack() {
         this.currentTrackIdx = (this.currentTrackIdx + 1) % this.tracks.length;
         if (this.musicInterval) clearInterval(this.musicInterval);
-        if (this.musicPlaying) this.playMelodyLoop();
+        if (this.musicPlaying && !this.isUserMuted && !this.isMuted) this.playMelodyLoop();
         return this.tracks[this.currentTrackIdx];
     }
 
@@ -119,7 +125,7 @@ class SlavicAudioEngine {
         let step = 0;
 
         this.musicInterval = setInterval(() => {
-            if (this.isMuted || !this.musicPlaying || !this.ctx) return;
+            if (this.isMuted || this.isUserMuted || !this.musicPlaying || !this.ctx) return;
             const melodyPattern = [0, 2, 4, 3, 5, 4, 2, 1, 3, 2, 0, 4];
             const noteIdx = melodyPattern[step % melodyPattern.length];
             const freq = track.scale[noteIdx % track.scale.length];
@@ -133,7 +139,7 @@ class SlavicAudioEngine {
     playGusliPluck(freq, vol = 0.06) {
         if (!this.unlocked) return;
         this.initContext();
-        if (this.isMuted || !this.ctx) return;
+        if (this.isMuted || this.isUserMuted || !this.ctx) return;
         try {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
@@ -155,7 +161,7 @@ class SlavicAudioEngine {
     playSwap() {
         if (!this.unlocked) return;
         this.initContext();
-        if (this.isMuted || !this.ctx) return;
+        if (this.isMuted || this.isUserMuted || !this.ctx) return;
         try {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
@@ -174,7 +180,7 @@ class SlavicAudioEngine {
     playMatch() {
         if (!this.unlocked) return;
         this.initContext();
-        if (this.isMuted || !this.ctx) return;
+        if (this.isMuted || this.isUserMuted || !this.ctx) return;
         try {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
@@ -193,7 +199,7 @@ class SlavicAudioEngine {
     playSpecial() {
         if (!this.unlocked) return;
         this.initContext();
-        if (this.isMuted || !this.ctx) return;
+        if (this.isMuted || this.isUserMuted || !this.ctx) return;
         try {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
@@ -212,12 +218,12 @@ class SlavicAudioEngine {
     playWin() {
         if (!this.unlocked) return;
         this.initContext();
-        if (this.isMuted || !this.ctx) return;
+        if (this.isMuted || this.isUserMuted || !this.ctx) return;
         const notes = [523.25, 659.25, 783.99, 1046.5];
         notes.forEach((freq, i) => {
             setTimeout(() => {
                 try {
-                    if (this.isMuted || !this.ctx) return;
+                    if (this.isMuted || this.isUserMuted || !this.ctx) return;
                     const osc = this.ctx.createOscillator();
                     const gain = this.ctx.createGain();
                     osc.type = 'triangle';
@@ -236,7 +242,7 @@ class SlavicAudioEngine {
     playUpgrade() {
         if (!this.unlocked) return;
         this.initContext();
-        if (this.isMuted || !this.ctx) return;
+        if (this.isMuted || this.isUserMuted || !this.ctx) return;
         try {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
@@ -255,7 +261,7 @@ class SlavicAudioEngine {
     playExplosion() {
         if (!this.unlocked) return;
         this.initContext();
-        if (this.isMuted || !this.ctx) return;
+        if (this.isMuted || this.isUserMuted || !this.ctx) return;
         try {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
@@ -287,14 +293,16 @@ class SlavicAudioEngine {
     }
 
     unmute() {
+        if (this.isUserMuted) {
+            this.isMuted = true;
+            return;
+        }
         this.isMuted = false;
-        if (!this.isUserMuted) {
-            if (this.ctx && this.ctx.state === 'suspended') {
-                try { this.ctx.resume(); } catch (e) {}
-            }
-            if (this.unlocked && !this.musicPlaying) {
-                this.startMusic();
-            }
+        if (this.ctx && this.ctx.state === 'suspended') {
+            try { this.ctx.resume(); } catch (e) {}
+        }
+        if (this.unlocked && !this.musicPlaying) {
+            this.startMusic();
         }
     }
 
@@ -311,9 +319,6 @@ class SlavicAudioEngine {
             const isAdShowing = (window.vkSDK && window.vkSDK.isShowingAd) || false;
             if (!isAdShowing) {
                 this.unmute();
-                if (this.unlocked) {
-                    this.startMusic();
-                }
             }
         }
         return !this.isUserMuted;

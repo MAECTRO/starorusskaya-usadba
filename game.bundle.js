@@ -609,7 +609,6 @@ class I18nManager {
 window.I18nManager = I18nManager;
 window.i18n = new I18nManager();
 
-
 // === vk-sdk.js ===
 /**
  * VK Games & VK Play Universal SDK Adapter
@@ -712,6 +711,22 @@ class VKSDKWrapper {
                 this.platform = 'vk_play';
                 this.isInitialized = true;
                 this.isMock = false;
+                if (typeof window.iframeApi === 'function') {
+                    window.iframeApi({
+                        appid: urlParams.get('appid') || '',
+                        onReady: (api) => {
+                            this.vkPlayApi = api;
+                            if (api && api.user) {
+                                this.user = api.user;
+                            }
+                        }
+                    });
+                } else if (typeof window.iframeApi === 'object') {
+                    this.vkPlayApi = window.iframeApi;
+                    if (window.iframeApi.user) {
+                        this.user = window.iframeApi.user;
+                    }
+                }
                 console.log('[VK-SDK] Initialized successfully with VK Play (iframeApi)');
             } catch (err) {
                 console.warn('[VK-SDK] VK Play init failed, falling back to mock:', err);
@@ -810,6 +825,54 @@ class VKSDKWrapper {
             return;
         }
 
+        // VK Play integration
+        if (this.platform === 'vk_play') {
+            this.isShowingAd = true;
+            if (window.gameAudio) window.gameAudio.mute();
+            if (cb.onOpen) cb.onOpen();
+
+            const finishVkPlayAd = (shown) => {
+                this.lastFullscreenAdTime = Date.now();
+                this.isShowingAd = false;
+                if (window.gameAudio && !window.gameAudio.isUserMuted) {
+                    window.gameAudio.unmute();
+                }
+                safeClose(shown);
+            };
+
+            if (this.vkPlayApi && this.vkPlayApi.ads && typeof this.vkPlayApi.ads.showFullscreenAdv === 'function') {
+                try {
+                    this.vkPlayApi.ads.showFullscreenAdv({
+                        callbacks: {
+                            onClose: () => finishVkPlayAd(true),
+                            onError: (err) => {
+                                this.isShowingAd = false;
+                                if (window.gameAudio && !window.gameAudio.isUserMuted) window.gameAudio.unmute();
+                                if (cb.onError) cb.onError(err);
+                                safeClose(false);
+                            }
+                        }
+                    });
+                    return;
+                } catch (e) {
+                    finishVkPlayAd(true);
+                    return;
+                }
+            } else if (this.vkPlayApi && typeof this.vkPlayApi.showAds === 'function') {
+                try {
+                    this.vkPlayApi.showAds({ interstitial: true });
+                    finishVkPlayAd(true);
+                    return;
+                } catch (e) {
+                    finishVkPlayAd(true);
+                    return;
+                }
+            } else {
+                finishVkPlayAd(true);
+                return;
+            }
+        }
+
         // Mock mode or non-embedded
         if (this.isMock || !window.vkBridge || typeof window.vkBridge.send !== 'function') {
             this.lastFullscreenAdTime = now;
@@ -857,6 +920,55 @@ class VKSDKWrapper {
         if (this.isShowingAd) {
             safeClose(false);
             return;
+        }
+
+        // VK Play integration
+        if (this.platform === 'vk_play') {
+            this.isShowingAd = true;
+            if (window.gameAudio) window.gameAudio.mute();
+            if (cb.onOpen) cb.onOpen();
+
+            const finishVkPlayRewarded = (rewarded) => {
+                this.isShowingAd = false;
+                if (window.gameAudio && !window.gameAudio.isUserMuted) {
+                    window.gameAudio.unmute();
+                }
+                if (rewarded && cb.onRewarded) cb.onRewarded();
+                safeClose(rewarded);
+            };
+
+            if (this.vkPlayApi && this.vkPlayApi.ads && typeof this.vkPlayApi.ads.showRewardedVideo === 'function') {
+                try {
+                    this.vkPlayApi.ads.showRewardedVideo({
+                        callbacks: {
+                            onRewarded: () => finishVkPlayRewarded(true),
+                            onClose: () => finishVkPlayRewarded(false),
+                            onError: (err) => {
+                                this.isShowingAd = false;
+                                if (window.gameAudio && !window.gameAudio.isUserMuted) window.gameAudio.unmute();
+                                if (cb.onError) cb.onError(err);
+                                safeClose(false);
+                            }
+                        }
+                    });
+                    return;
+                } catch (e) {
+                    finishVkPlayRewarded(true);
+                    return;
+                }
+            } else if (this.vkPlayApi && typeof this.vkPlayApi.showAds === 'function') {
+                try {
+                    this.vkPlayApi.showAds({ rewarded: true });
+                    finishVkPlayRewarded(true);
+                    return;
+                } catch (e) {
+                    finishVkPlayRewarded(true);
+                    return;
+                }
+            } else {
+                finishVkPlayRewarded(true);
+                return;
+            }
         }
 
         // Mock mode simulation
@@ -920,14 +1032,18 @@ class VKSDKWrapper {
         }
 
         let result = null;
-        if (cloudData && Object.keys(cloudData).length > 0) {
-            if (localData && ((localData.level || 0) > (cloudData.level || 0) || (localData.scoreTotal || 0) > (cloudData.scoreTotal || 0))) {
-                result = { ...cloudData, ...localData };
-            } else {
-                result = cloudData;
-            }
+        if (cloudData && localData) {
+            result = {
+                ...cloudData,
+                ...localData,
+                level: Math.max(localData.level || 1, cloudData.level || 1),
+                scoreTotal: Math.max(localData.scoreTotal || 0, cloudData.scoreTotal || 0),
+                gold: Math.max(localData.gold || 0, cloudData.gold || 0),
+                wood: Math.max(localData.wood || 0, cloudData.wood || 0),
+                resin: Math.max(localData.resin || 0, cloudData.resin || 0)
+            };
         } else {
-            result = localData || null;
+            result = cloudData || localData || null;
         }
 
         if (result) {
@@ -1014,7 +1130,6 @@ class VKSDKWrapper {
 window.VKSDKWrapper = VKSDKWrapper;
 window.vkSDK = new VKSDKWrapper();
 
-
 // === audio.js ===
 class SlavicAudioEngine {
     constructor() {
@@ -1078,7 +1193,10 @@ class SlavicAudioEngine {
             } catch (e) {}
         }
         if (this.ctx && this.ctx.state === 'suspended') {
-            this.ctx.resume().catch(() => {});
+            try {
+                const res = this.ctx.resume();
+                if (res && typeof res.catch === 'function') res.catch(() => {});
+            } catch (e) {}
         }
     }
 
@@ -1092,7 +1210,10 @@ class SlavicAudioEngine {
                 }
             }
             if (this.ctx && this.ctx.state === 'suspended') {
-                this.ctx.resume().catch(() => {});
+                try {
+                    const res = this.ctx.resume();
+                    if (res && typeof res.catch === 'function') res.catch(() => {});
+                } catch (e) {}
             }
             if (this.ctx) {
                 const buffer = this.ctx.createBuffer(1, 1, 22050);
@@ -1111,7 +1232,7 @@ class SlavicAudioEngine {
     startMusic() {
         if (!this.unlocked) return;
         this.initContext();
-        if (this.musicPlaying || this.isMuted) return;
+        if (this.musicPlaying || this.isMuted || this.isUserMuted) return;
         this.musicPlaying = true;
         this.playMelodyLoop();
     }
@@ -1127,7 +1248,7 @@ class SlavicAudioEngine {
     nextTrack() {
         this.currentTrackIdx = (this.currentTrackIdx + 1) % this.tracks.length;
         if (this.musicInterval) clearInterval(this.musicInterval);
-        if (this.musicPlaying) this.playMelodyLoop();
+        if (this.musicPlaying && !this.isUserMuted && !this.isMuted) this.playMelodyLoop();
         return this.tracks[this.currentTrackIdx];
     }
 
@@ -1137,7 +1258,7 @@ class SlavicAudioEngine {
         let step = 0;
 
         this.musicInterval = setInterval(() => {
-            if (this.isMuted || !this.musicPlaying || !this.ctx) return;
+            if (this.isMuted || this.isUserMuted || !this.musicPlaying || !this.ctx) return;
             const melodyPattern = [0, 2, 4, 3, 5, 4, 2, 1, 3, 2, 0, 4];
             const noteIdx = melodyPattern[step % melodyPattern.length];
             const freq = track.scale[noteIdx % track.scale.length];
@@ -1151,7 +1272,7 @@ class SlavicAudioEngine {
     playGusliPluck(freq, vol = 0.06) {
         if (!this.unlocked) return;
         this.initContext();
-        if (this.isMuted || !this.ctx) return;
+        if (this.isMuted || this.isUserMuted || !this.ctx) return;
         try {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
@@ -1173,7 +1294,7 @@ class SlavicAudioEngine {
     playSwap() {
         if (!this.unlocked) return;
         this.initContext();
-        if (this.isMuted || !this.ctx) return;
+        if (this.isMuted || this.isUserMuted || !this.ctx) return;
         try {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
@@ -1192,7 +1313,7 @@ class SlavicAudioEngine {
     playMatch() {
         if (!this.unlocked) return;
         this.initContext();
-        if (this.isMuted || !this.ctx) return;
+        if (this.isMuted || this.isUserMuted || !this.ctx) return;
         try {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
@@ -1211,7 +1332,7 @@ class SlavicAudioEngine {
     playSpecial() {
         if (!this.unlocked) return;
         this.initContext();
-        if (this.isMuted || !this.ctx) return;
+        if (this.isMuted || this.isUserMuted || !this.ctx) return;
         try {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
@@ -1230,12 +1351,12 @@ class SlavicAudioEngine {
     playWin() {
         if (!this.unlocked) return;
         this.initContext();
-        if (this.isMuted || !this.ctx) return;
+        if (this.isMuted || this.isUserMuted || !this.ctx) return;
         const notes = [523.25, 659.25, 783.99, 1046.5];
         notes.forEach((freq, i) => {
             setTimeout(() => {
                 try {
-                    if (this.isMuted || !this.ctx) return;
+                    if (this.isMuted || this.isUserMuted || !this.ctx) return;
                     const osc = this.ctx.createOscillator();
                     const gain = this.ctx.createGain();
                     osc.type = 'triangle';
@@ -1254,7 +1375,7 @@ class SlavicAudioEngine {
     playUpgrade() {
         if (!this.unlocked) return;
         this.initContext();
-        if (this.isMuted || !this.ctx) return;
+        if (this.isMuted || this.isUserMuted || !this.ctx) return;
         try {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
@@ -1273,7 +1394,7 @@ class SlavicAudioEngine {
     playExplosion() {
         if (!this.unlocked) return;
         this.initContext();
-        if (this.isMuted || !this.ctx) return;
+        if (this.isMuted || this.isUserMuted || !this.ctx) return;
         try {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
@@ -1305,14 +1426,16 @@ class SlavicAudioEngine {
     }
 
     unmute() {
+        if (this.isUserMuted) {
+            this.isMuted = true;
+            return;
+        }
         this.isMuted = false;
-        if (!this.isUserMuted) {
-            if (this.ctx && this.ctx.state === 'suspended') {
-                try { this.ctx.resume(); } catch (e) {}
-            }
-            if (this.unlocked && !this.musicPlaying) {
-                this.startMusic();
-            }
+        if (this.ctx && this.ctx.state === 'suspended') {
+            try { this.ctx.resume(); } catch (e) {}
+        }
+        if (this.unlocked && !this.musicPlaying) {
+            this.startMusic();
         }
     }
 
@@ -1329,9 +1452,6 @@ class SlavicAudioEngine {
             const isAdShowing = (window.vkSDK && window.vkSDK.isShowingAd) || false;
             if (!isAdShowing) {
                 this.unmute();
-                if (this.unlocked) {
-                    this.startMusic();
-                }
             }
         }
         return !this.isUserMuted;
@@ -1382,8 +1502,6 @@ if (typeof window !== 'undefined') {
         }
     });
 }
-
-
 
 // === slavic-art.js ===
 const SlavicArt = {
@@ -3321,7 +3439,6 @@ const SlavicArt = {
 
 window.SlavicArt = SlavicArt;
 
-
 // === level-map.js ===
 class LevelMapEngine {
     constructor(containerEl, options = {}) {
@@ -3530,7 +3647,6 @@ class LevelMapEngine {
 }
 
 window.LevelMapEngine = LevelMapEngine;
-
 
 // === match3.js ===
 class MatchThreeEngine {
@@ -4829,7 +4945,6 @@ class MatchThreeEngine {
 
 window.MatchThreeEngine = MatchThreeEngine;
 
-
 // === manor.js ===
 class ManorEngine {
     constructor(manorCanvas, weatherCanvas, options = {}) {
@@ -5690,7 +5805,6 @@ class ManorEngine {
 
 window.ManorEngine = ManorEngine;
 
-
 // === heroes.js ===
 class HeroesSystem {
     constructor() {
@@ -5926,7 +6040,6 @@ class HeroesSystem {
 
 window.HeroesSystem = HeroesSystem;
 
-
 // === pets.js ===
 class SlavicPetsSystem {
     constructor() {
@@ -6047,7 +6160,6 @@ class SlavicPetsSystem {
 }
 
 window.SlavicPetsSystem = SlavicPetsSystem;
-
 
 // === market.js ===
 class SlavicMarketSystem {
@@ -6182,7 +6294,6 @@ class SlavicMarketSystem {
 }
 
 window.SlavicMarketSystem = SlavicMarketSystem;
-
 
 // === fishing.js ===
 class SlavicFishing {
@@ -6433,7 +6544,6 @@ class SlavicFishing {
 
 window.SlavicFishing = SlavicFishing;
 
-
 // === riddles.js ===
 class SlavicRiddlesSystem {
     constructor() {
@@ -6552,7 +6662,6 @@ class SlavicRiddlesSystem {
 
 window.SlavicRiddlesSystem = SlavicRiddlesSystem;
 
-
 // === night-siege.js ===
 class NightSiegeEngine {
     constructor(canvas, options = {}) {
@@ -6611,7 +6720,6 @@ class NightSiegeEngine {
 }
 
 window.NightSiegeEngine = NightSiegeEngine;
-
 
 // === achievements.js ===
 class AchievementsSystem {
@@ -6686,7 +6794,6 @@ class AchievementsSystem {
 }
 
 window.AchievementsSystem = AchievementsSystem;
-
 
 // === quests.js ===
 class QuestsSystem {
@@ -6777,7 +6884,6 @@ class QuestsSystem {
 }
 
 window.QuestsSystem = QuestsSystem;
-
 
 // === wheel.js ===
 class VelesWheel {
@@ -6920,7 +7026,6 @@ class VelesWheel {
 
 window.VelesWheel = VelesWheel;
 
-
 // === codex.js ===
 class SlavicCodex {
     constructor() {
@@ -6956,7 +7061,6 @@ class SlavicCodex {
 }
 
 window.SlavicCodex = SlavicCodex;
-
 
 // === app.js ===
 window.showToast = function(text, duration = 2400) {
@@ -7245,11 +7349,15 @@ class SlavicManorApp {
     }
 
     updateUIResources() {
-        document.getElementById('res-wood').textContent = this.gameState.wood;
-        document.getElementById('res-gold').textContent = this.gameState.gold;
-        document.getElementById('res-resin').textContent = this.gameState.resin;
-        document.getElementById('res-energy').textContent = `${this.gameState.energy}/${this.gameState.maxEnergy}`;
-        document.getElementById('current-level-num').textContent = this.gameState.level;
+        const setTxt = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val;
+        };
+        setTxt('res-wood', this.gameState.wood);
+        setTxt('res-gold', this.gameState.gold);
+        setTxt('res-resin', this.gameState.resin);
+        setTxt('res-energy', `${this.gameState.energy}/${this.gameState.maxEnergy}`);
+        setTxt('current-level-num', this.gameState.level);
     }
 
     setStoryDialogue(author, avatar, text) {
@@ -8269,7 +8377,17 @@ class SlavicManorApp {
 
 window.SlavicManorApp = SlavicManorApp;
 
-document.addEventListener('DOMContentLoaded', () => {
-    window.app = new SlavicManorApp();
-    window.app.init();
-});
+const startApp = () => {
+    if (!window.app && typeof document !== 'undefined' && document.getElementById('game-container')) {
+        window.app = new SlavicManorApp();
+        window.app.init();
+    }
+};
+
+if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startApp);
+    } else {
+        startApp();
+    }
+}

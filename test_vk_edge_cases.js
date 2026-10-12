@@ -88,12 +88,16 @@ async function runTests() {
 
     // Tab restore / ad close must NOT unmute if user explicitly muted!
     window.gameAudio.unmute();
-    assert.strictEqual(window.gameAudio.isMuted, false, 'isMuted cleared');
-    // but audio context resume guarded by !isUserMuted
+    assert.strictEqual(window.gameAudio.isMuted, true, 'Audio MUST remain muted when user explicitly muted');
     assert.strictEqual(window.gameAudio.isUserMuted, true, 'User mute remains true');
-    console.log('✔ Edge Case 3: User manual mute persists through tab/ad restores');
 
-    // 5. Cloud & LocalStorage Persistence test
+    // Sound toggle restores audio
+    window.gameAudio.toggleUserMute();
+    assert.strictEqual(window.gameAudio.isUserMuted, false, 'User mute should now be false');
+    assert.strictEqual(window.gameAudio.isMuted, false, 'Audio should now be unmuted');
+    console.log('✔ Edge Case 3: User manual mute strictly persists through tab/ad restores');
+
+    // 5. Cloud & LocalStorage Persistence & Smart Bidirectional Merge test
     const testState = {
         level: 12,
         wood: 950,
@@ -105,7 +109,18 @@ async function runTests() {
     await window.vkSDK.saveData(testState);
     const loadedState = await window.vkSDK.loadData();
     assert.deepStrictEqual(loadedState, testState, 'Loaded state should match saved state');
-    console.log('✔ Edge Case 4: Cloud and LocalStorage bidirectional persistence verified');
+
+    // Test offline progress merge: player earned higher score offline
+    window.localStorage.setItem('slavic_manor_save', JSON.stringify({
+        ...testState,
+        level: 14,
+        gold: 5000,
+        scoreTotal: 21000
+    }));
+    const mergedState = await window.vkSDK.loadData();
+    assert.strictEqual(mergedState.level, 14, 'Offline higher level must be preserved');
+    assert.strictEqual(mergedState.gold, 5000, 'Offline higher gold must be preserved');
+    console.log('✔ Edge Case 4: Cloud and LocalStorage bidirectional intelligent persistence verified');
 
     // 6. VK Bridge simulation test
     let bridgeInitSent = false;
@@ -144,11 +159,49 @@ async function runTests() {
     assert.strictEqual(typeof bridgeHideSubscriber, 'function', 'Bridge subscriber registered');
     bridgeHideSubscriber({ detail: { type: 'VKWebAppViewHide' } });
     assert.strictEqual(window.gameAudio.isMuted, true, 'VKWebAppViewHide must instantly mute gameAudio');
-
     console.log('✔ Edge Case 5: VK Bridge official protocol (VKWebAppInit, VKWebAppViewHide, NativeAds) verified');
 
+    // 7. VK Play (iframeApi) simulation test
+    let vkPlayAdShown = false;
+    let vkPlayRewardedShown = false;
+    delete window.vkBridge;
+    window.location.hostname = 'vkplay.ru';
+    window.iframeApi = {
+        user: { id: 12345, name: 'VKPlayGamer' },
+        ads: {
+            showFullscreenAdv(opts) {
+                vkPlayAdShown = true;
+                if (opts && opts.callbacks && opts.callbacks.onClose) opts.callbacks.onClose();
+            },
+            showRewardedVideo(opts) {
+                vkPlayRewardedShown = true;
+                if (opts && opts.callbacks && opts.callbacks.onRewarded) opts.callbacks.onRewarded();
+            }
+        }
+    };
+
+    const vkPlayWrapper = new window.VKSDKWrapper();
+    await vkPlayWrapper.init();
+    assert.strictEqual(vkPlayWrapper.platform, 'vk_play', 'Platform should be vk_play');
+    assert.strictEqual(vkPlayWrapper.user.name, 'VKPlayGamer', 'VK Play user should be loaded');
+
+    // Test VK Play Interstitial Ad
+    await vkPlayWrapper.showFullscreenAdv({
+        onClose: (shown) => { assert.strictEqual(shown, true, 'VK Play ad showed'); }
+    });
+    assert.strictEqual(vkPlayAdShown, true, 'VK Play ads.showFullscreenAdv must be invoked');
+
+    // Test VK Play Rewarded Ad
+    let vkPlayRewardGranted = false;
+    await vkPlayWrapper.showRewardedVideo({
+        onRewarded: () => { vkPlayRewardGranted = true; }
+    });
+    assert.strictEqual(vkPlayRewardedShown, true, 'VK Play ads.showRewardedVideo must be invoked');
+    assert.strictEqual(vkPlayRewardGranted, true, 'VK Play reward must be granted');
+    console.log('✔ Edge Case 6: VK Play (iframeApi) ads and user profile verified');
+
     console.log('\n========================================');
-    console.log('ALL EDGE CASE TESTS PASSED PERFECTLY (5/5)');
+    console.log('ALL EDGE CASE TESTS PASSED PERFECTLY (6/6)');
     console.log('========================================');
 }
 
