@@ -1,0 +1,899 @@
+/* Slavic Manor (Старорусская Усадьба) Stylesheet v0.0.1 */
+/* Fully Responsive: Fullscreen Widescreen for PC/Tablets, Fluid Adaptive Layout for Mobile */
+
+:root {
+    --bg-dark: #1A0E08;
+    --wood-dark: #2C1810;
+    --wood-medium: #5C3A21;
+    --wood-light: #8B5A2B;
+    --gold: #FFD700;
+    --gold-dark: #B8860B;
+    --red-rubin: #9E2A2B;
+    --text-light: #F5EBE0;
+    --text-muted: #D5C7B7;
+    --green-accent: #2D6A4F;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+}
+
+*::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+html {
+    width: 100%;
+    height: 100%;
+    overflow: hidden !important;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Yanone Kaffeesatz', sans-serif;
+    font-size: 1.15rem;
+    background: #0D0704;
+    color: var(--text-light);
+    overflow: hidden !important;
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+}
+
+/* ==========================================================================
+   1. MAIN CONTAINER: FULLSCREEN ON PC, FLUID ON MOBILE
+   ========================================================================== */
+#game-container {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-dark);
+    position: relative;
+    overflow: hidden !important;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.95);
+}
+
+/* 2. Top Header Status Bar */
+#top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+    padding-top: calc(8px + env(safe-area-inset-top, 0px));
+    background: linear-gradient(180deg, #3A2013 0%, #201007 100%);
+    border-bottom: 2px solid var(--gold-dark);
+    z-index: 20;
+    flex-shrink: 0;
+}
+
+.game-logo-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 1rem;
+    color: var(--gold);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    white-space: nowrap;
+}
+
+.game-logo-icon {
+    font-size: 1.2rem;
+}
+
+.resources {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.res-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.45);
+    padding: 3px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--wood-medium);
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.top-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.icon-btn {
+    background: #3E2415;
+    border: 1px solid var(--gold-dark);
+    color: var(--gold);
+    border-radius: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 1.05rem;
+    transition: background 0.15s, transform 0.15s;
+}
+
+.icon-btn:hover {
+    background: #5C3A21;
+    transform: scale(1.06);
+}
+
+.reward-btn {
+    background: linear-gradient(180deg, #E63946 0%, #9E2A2B 100%);
+    color: #fff;
+    border: 1px solid var(--gold);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 0.88rem;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    transition: transform 0.15s;
+}
+
+.reward-btn:hover {
+    transform: scale(1.05);
+}
+
+/* 3. Main Content Viewport */
+#main-content {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+.view {
+    display: none;
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 10px 16px;
+}
+
+.view.active {
+    display: flex;
+}
+
+#view-manor {
+    overflow: hidden !important;
+    padding: 6px 12px;
+}
+
+/* Season Banner */
+.season-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(90deg, rgba(92, 58, 33, 0.85) 0%, rgba(44, 24, 16, 0.95) 100%);
+    border: 1px solid var(--gold-dark);
+    border-radius: 10px;
+    padding: 6px 14px;
+    margin-bottom: 8px;
+    font-size: 1.05rem;
+    flex-shrink: 0;
+}
+
+.weather-tag {
+    font-size: 0.85rem;
+    color: #FFD700;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+
+/* Dialogue Box */
+.dialogue-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(26, 14, 8, 0.9);
+    border: 1px solid var(--wood-light);
+    border-radius: 10px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    flex-shrink: 0;
+}
+
+.dialogue-avatar {
+    font-size: 2.2rem;
+}
+
+.dialogue-author {
+    font-family: 'Russo One', sans-serif;
+    font-size: 0.95rem;
+    color: var(--gold);
+}
+
+.dialogue-text {
+    font-size: 1rem;
+    color: #FFF;
+    line-height: 1.2;
+}
+
+/* Canvas Viewport */
+#manor-canvas-wrapper {
+    flex: 1;
+    position: relative;
+    width: 100%;
+    min-height: 300px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 3px solid var(--wood-medium);
+}
+
+#manor-canvas, #weather-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+#weather-canvas {
+    pointer-events: none;
+}
+
+.manor-controls {
+    margin-top: 8px;
+    display: flex;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.gold-btn {
+    background: linear-gradient(180deg, #D4AF37 0%, #9A7B1C 100%);
+    color: #1A0E08;
+    border: 2px solid #FFF;
+    border-radius: 10px;
+    padding: 10px 22px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 1.1rem;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.gold-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(255, 215, 0, 0.4);
+}
+
+.gold-btn:active {
+    transform: translateY(2px);
+}
+
+.gold-btn.primary-btn {
+    width: 100%;
+}
+
+/* ==========================================================================
+   4. MATCH-3 WIDESCREEN & MOBILE ADAPTIVE LAYOUT
+   ========================================================================== */
+#view-match3 {
+    padding: 8px 16px;
+    justify-content: space-between;
+    height: 100%;
+}
+
+.match3-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(44, 24, 16, 0.95);
+    border: 2px solid var(--gold-dark);
+    border-radius: 12px;
+    padding: 8px 16px;
+    margin-bottom: 8px;
+    max-width: 780px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.m3-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.m3-stat .lbl {
+    font-size: 0.8rem;
+    color: #BBB;
+}
+
+.m3-stat span:not(.lbl) {
+    font-family: 'Russo One', sans-serif;
+    font-size: 1.35rem;
+    color: var(--gold);
+}
+
+.m3-stat.main-stat span:not(.lbl) {
+    font-size: 1.7rem;
+    color: #FFF;
+}
+
+.target-container {
+    display: flex;
+    gap: 8px;
+}
+
+.target-item {
+    font-family: 'Russo One', sans-serif;
+    font-size: 1.05rem;
+    color: #FFF;
+}
+
+#match3-board-wrapper {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    width: 100%;
+    max-height: calc(100% - 130px);
+}
+
+#match3-canvas {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9);
+    border: 3px solid var(--wood-medium);
+    touch-action: none;
+}
+
+.match3-footer {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    padding-top: 8px;
+    max-width: 780px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.booster-btn {
+    flex: 1;
+    max-width: 220px;
+    background: #3E2415;
+    border: 1px solid var(--gold);
+    color: #FFF;
+    font-family: 'Russo One', sans-serif;
+    font-size: 1rem;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.15s;
+}
+
+.booster-btn:hover {
+    transform: scale(1.04);
+}
+
+.booster-btn.reward {
+    background: linear-gradient(180deg, #E63946 0%, #9E2A2B 100%);
+}
+
+/* ==========================================================================
+   5. SAGA MAP (500 LEVELS / 20 CHAPTERS) WIDESCREEN GRID
+   ========================================================================== */
+.section-title {
+    font-family: 'Russo One', sans-serif;
+    font-size: 1.4rem;
+    color: var(--gold);
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.levels-scroll-container {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-width: 1000px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.level-region-card {
+    background: rgba(44, 24, 16, 0.85);
+    border: 2px solid var(--wood-light);
+    border-radius: 14px;
+    padding: 14px;
+}
+
+.region-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+    padding-bottom: 6px;
+}
+
+.region-title {
+    font-family: 'Russo One', sans-serif;
+    color: var(--gold);
+    font-size: 1.15rem;
+}
+
+.region-boss {
+    font-size: 0.95rem;
+    color: #E63946;
+    font-weight: bold;
+}
+
+.levels-path-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+    gap: 10px;
+}
+
+.level-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 64px;
+    border-radius: 10px;
+    border: 2px solid var(--wood-medium);
+    background: #1A0E08;
+    color: #FFF;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.15s;
+}
+
+.level-node:hover {
+    transform: scale(1.08);
+}
+
+.level-node.unlocked {
+    background: linear-gradient(180deg, #2D6A4F 0%, #1B4332 100%);
+    border-color: var(--gold);
+}
+
+.level-node.current {
+    box-shadow: 0 0 16px var(--gold);
+    border-color: #FFF;
+    animation: pulseGlow 1.5s infinite alternate;
+}
+
+.level-node.boss-node {
+    background: linear-gradient(180deg, #780000 0%, #3D0000 100%);
+    border-color: #FF4D6D;
+}
+
+.level-node.boss-node.climax-boss {
+    background: linear-gradient(180deg, #9E2A2B 0%, #4A0E17 100%);
+    border-color: #FFD700;
+    box-shadow: 0 0 14px rgba(255, 215, 0, 0.7);
+    animation: pulseGlow 1.4s infinite alternate;
+}
+
+.level-node.boss-node.mini-boss {
+    background: linear-gradient(180deg, #5C1E1E 0%, #2B0C0C 100%);
+    border-color: #E63946;
+}
+
+.node-icon { font-size: 1.25rem; }
+.node-num { font-family: 'Russo One', sans-serif; font-size: 0.95rem; }
+.node-stars { font-size: 0.75rem; }
+
+@keyframes pulseGlow {
+    from { transform: scale(0.98); }
+    to { transform: scale(1.04); }
+}
+
+/* ==========================================================================
+   6. WIDESCREEN CARDS & GRIDS (HEROES, CRAFT, CODEX, ACHIEVEMENTS)
+   ========================================================================== */
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 12px;
+    max-width: 1100px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(44, 24, 16, 0.92);
+    border: 1px solid var(--wood-light);
+    border-radius: 12px;
+    padding: 10px 14px;
+    transition: transform 0.15s, border-color 0.15s;
+}
+
+.card:hover {
+    border-color: var(--gold);
+    transform: translateY(-2px);
+}
+
+.achievement-card.done {
+    border-color: var(--gold);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.ach-progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #1A0E08;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 6px;
+    border: 1px solid #5C3A21;
+}
+
+.ach-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #D4AF37, #FFD700);
+    transition: width 0.3s;
+}
+
+.card-icon { font-size: 2.4rem; }
+.card-info { flex: 1; }
+.card-name { font-family: 'Russo One', sans-serif; font-size: 1.1rem; color: var(--gold); }
+.card-desc { font-size: 0.9rem; color: #DDD; }
+
+/* Calendar Grid */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.calendar-day-card {
+    background: #2C1810;
+    border: 1px solid var(--wood-light);
+    border-radius: 10px;
+    padding: 8px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 105px;
+}
+
+.calendar-day-card.today {
+    border-color: var(--gold);
+    box-shadow: 0 0 12px var(--gold);
+}
+
+.calendar-day-card.claimed {
+    opacity: 0.6;
+}
+
+.cal-day-title { font-size: 0.85rem; color: #AAA; font-family: 'Russo One', sans-serif; }
+.cal-reward-icon { font-size: 1.6rem; }
+.cal-reward-label { font-size: 0.8rem; color: #FFF; font-weight: bold; }
+.cal-btn { font-size: 0.8rem; padding: 4px 8px; border-radius: 6px; }
+
+/* 7. Story Chronicle Scroll */
+.story-scroll-card {
+    background: linear-gradient(180deg, #D4AF37 0%, #9A7B1C 5%, #5C3A21 100%);
+    border: 3px solid var(--gold);
+    color: #FFF;
+    max-width: 520px;
+}
+
+.scroll-header {
+    font-family: 'Russo One', sans-serif;
+    font-size: 1.4rem;
+    color: var(--gold);
+    text-shadow: 0 2px 4px #000;
+}
+
+.scroll-body-text {
+    font-family: 'Marck Script', cursive;
+    font-size: 1.45rem;
+    color: #FFF;
+    line-height: 1.45;
+    margin: 14px 0;
+    text-shadow: 0 1px 3px #000;
+}
+
+/* 8. Leaderboard */
+#leaderboard-container {
+    background: rgba(44, 24, 16, 0.92);
+    border: 1px solid var(--wood-light);
+    border-radius: 12px;
+    overflow: hidden;
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.lb-header, .lb-row {
+    display: grid;
+    grid-template-columns: 50px 1fr 80px 100px;
+    padding: 10px 16px;
+    text-align: center;
+}
+
+.lb-header {
+    background: #3E2415;
+    font-family: 'Russo One', sans-serif;
+    color: var(--gold);
+}
+
+.lb-row { border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+.lb-row.my-row { background: rgba(45, 106, 79, 0.4); font-weight: bold; color: var(--gold); }
+
+/* View Header Bar with Back Button */
+.view-header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+    width: 100%;
+    flex-shrink: 0;
+}
+
+.view-header-bar .section-title {
+    margin: 0;
+    text-align: left;
+    flex: 1;
+    font-size: 1.25rem;
+}
+
+.btn-back-manor {
+    padding: 6px 14px;
+    font-size: 0.88rem;
+    font-family: 'Russo One', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(180deg, #5C3A21 0%, #3A2013 100%);
+    border: 1px solid var(--gold);
+    border-radius: 8px;
+    color: var(--gold);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform 0.15s, background 0.15s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+    flex-shrink: 0;
+}
+
+.btn-back-manor:hover {
+    transform: scale(1.04);
+    background: linear-gradient(180deg, #795548 0%, #4E342E 100%);
+}
+
+.btn-back-manor:active {
+    transform: scale(0.96);
+}
+
+/* 9. Bottom Navigation Bar */
+#bottom-nav {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: 2px;
+    background: linear-gradient(0deg, #201007 0%, #3A2013 100%);
+    border-top: 2px solid var(--gold-dark);
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+    flex-shrink: 0;
+    z-index: 20;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.nav-tab {
+    background: none;
+    border: none;
+    color: #AAA;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.76rem;
+    padding: 3px 2px;
+    flex: 1;
+    min-width: 0;
+    border-radius: 8px;
+    transition: background 0.15s, color 0.15s;
+}
+
+.nav-tab:hover {
+    background: rgba(255, 215, 0, 0.1);
+}
+
+.nav-icon { 
+    font-size: 1.25rem; 
+    line-height: 1.2;
+}
+
+.nav-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    font-size: 0.72rem;
+}
+
+.nav-tab.active { 
+    color: var(--gold); 
+    background: rgba(255, 215, 0, 0.15); 
+}
+
+.nav-tab.active .nav-icon { 
+    transform: scale(1.12); 
+}
+
+@media (max-width: 480px) {
+    #game-header-title {
+        display: none;
+    }
+    .icon-btn {
+        padding: 4px 6px;
+    }
+    .res-item {
+        padding: 2px 6px;
+    }
+    .nav-tab {
+        padding: 2px 1px;
+    }
+    .nav-icon {
+        font-size: 1.15rem;
+    }
+    .nav-label {
+        font-size: 0.68rem;
+    }
+    .view-header-bar .section-title {
+        font-size: 1.05rem;
+    }
+    .btn-back-manor {
+        padding: 5px 10px;
+        font-size: 0.8rem;
+    }
+}
+
+/* 10. Modals */
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.modal-overlay.hidden { display: none; }
+
+.modal-card {
+    background: linear-gradient(180deg, #3A2013 0%, #201007 100%);
+    border: 2px solid var(--gold);
+    border-radius: 14px;
+    padding: 20px;
+    width: 92%;
+    max-width: 440px;
+    position: relative;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.95);
+}
+
+.modal-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: #AAA;
+    font-size: 1.3rem;
+    cursor: pointer;
+}
+
+.cost-items {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin: 12px 0;
+}
+
+.modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.reward-btn.lg {
+    padding: 12px;
+    font-size: 1.1rem;
+}
+
+/* 9. Non-blocking Slavic Toast Notification */
+#game-toast {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-25px);
+    background: linear-gradient(180deg, #2D1808 0%, #170A02 100%);
+    border: 2px solid #FFD700;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.85), 0 0 16px rgba(255, 215, 0, 0.45);
+    border-radius: 14px;
+    padding: 10px 22px;
+    color: #FFF5EA;
+    font-family: 'Russo One', sans-serif;
+    font-size: 15px;
+    text-align: center;
+    z-index: 99999;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    max-width: 90vw;
+    white-space: pre-line;
+}
+
+#game-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* 10. Mobile Portrait Responsiveness */
+@media (max-width: 480px) {
+    #game-header-title {
+        display: none !important;
+    }
+    .icon-btn {
+        padding: 4px 6px !important;
+    }
+    .res-item {
+        padding: 2px 6px !important;
+        font-size: 0.88rem !important;
+    }
+    .resources {
+        gap: 6px !important;
+    }
+    .top-actions {
+        gap: 4px !important;
+    }
+}
+
