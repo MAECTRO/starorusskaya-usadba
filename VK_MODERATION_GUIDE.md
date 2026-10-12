@@ -6,12 +6,12 @@
 
 ### Десктопная версия (Web / Компьютеры):
 - **Тип приложения:** Web / Iframe
-- **URL для десктопа (Iframe URL):** `https://<ваш_логин_github>.github.io/<имя_репозитория>/`
+- **URL для десктопа (Iframe URL):** `https://maectro.github.io/starorusskaya-usadba/`
 - **Ширина:** `1000 px` (рекомендуемая), поддерживает динамическую ширину от 800 до 100% ширины контейнера ВК.
 - **Высота:** `650 px` (рекомендуемая), адаптивный layout автоматически подстраивается под высоту без появления полос прокрутки.
 
 ### Мобильная версия (Mobile Web / Android / iOS):
-- **URL для мобильной версии:** `https://<ваш_логин_github>.github.io/<имя_репозитория>/`
+- **URL для мобильной версии:** `https://maectro.github.io/starorusskaya-usadba/`
 - **Ориентация экрана:** `Портретная (Portrait)` / `Адаптивная (Fluid)`
 - **Viewport:** `width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover`
 - **Safe Area Insets:** В коде стилей `style.css` прописаны `env(safe-area-inset-top)` в `#top-bar` и `env(safe-area-inset-bottom)` в `#bottom-nav`. Элементы управления гарантированно не перекрываются «чёлкой», «островком» (Dynamic Island) или нижней системной полосой жестов.
